@@ -345,3 +345,209 @@ def kb(rb, Z, AddRad, MultRad, band, dES, outputPath):
 
     savetif(kb, outputPath) 
     return kb
+
+"""def pb(kb_numerator, kb2, kb3, kb4, kb5, kb6, kb7, outputPath):
+    
+    # Albedo Weight 
+    # via https://www.scielo.br/j/rbeaa/a/sX6cJjNXWMfHQ5p4h33B8Zz/?lang=en&format=pdf
+
+
+    
+    #kb_numerator = np.array(tf.imread(kb_numerator))
+    #kb2 = np.array(tf.imread(kb2))
+    #kb3 = np.array(tf.imread(kb3))
+   # kb4 = np.array(tf.imread(kb4))
+    #kb5 = np.array(tf.imread(kb5))
+    #kb6 = np.array(tf.imread(kb6))
+    #kb7 = np.array(tf.imread(kb7))
+
+    pb = kb_numerator / (kb2 + kb3 + kb4 + kb5 + kb6 + kb7)
+
+    savetif(pb, outputPath) 
+
+    return pb"""
+
+def toaplanetary(pb2,rb2, pb3, rb3, pb4, rb4,  pb5, rb5, pb6,rb6, pb7, rb7, outputPath):
+    """band2 = np.array(tf.imread(band2))
+    band3 = np.array(tf.imread(band3))
+    band4 = np.array(tf.imread(band4))
+    band5 = np.array(tf.imread(band5))
+    band6 = np.array(tf.imread(band6))
+    band7 = np.array(tf.imread(band7))"""
+
+
+    #rb = np.array(tf.imread(rb))
+    
+    toaPlanet = pb2 * rb2 + pb3 * rb3 + pb4 * rb4 + pb5 * rb5 + pb6 * rb6 + pb7 * rb7
+    savetif(toaPlanet, outputPath)
+    
+    return toaPlanet
+
+def albedo(toaplanet, Toc, outputPath):
+    """
+    # Albedo 
+    # Unitless or %
+    # Range from 0 to 1 (ot 0 % to 100 %)
+
+    toaplanet = Planetary Top Of Atmosphere Radiance  
+    Toc = Atmospheric transmittance in the solar radiation domain
+    """
+    albedo = (toaplanet - 0.03) / (Toc ** 2)
+
+    albedo[albedo < 0] = 0.1
+    
+    albedo[albedo > 1] = 0.99
+
+    savetif(albedo, outputPath)
+    return albedo
+
+
+def longout(emisSurf, LST, outputPath):
+    """
+    # Outgoing Longwave Radiation [W/m2]
+    # via Stephan-Boltzmann law https://doi.org/10.1016/j.jrmge.2016.10.004
+
+    emisSurf = emissivity of surface [-]
+    LST = Land Surface Temprature [˚C]
+    """
+    LST = LST + 273.15
+    longOut = emisSurf * 5.6703 * 10.0 ** (-8.0) * LST ** 4
+    savetif(longOut, outputPath)
+    return longOut
+######################################################################
+
+def longin(emisAtm, LST, outputPath):
+    """
+    # Incoming Longwave Radiation [W/m2]
+    # via Stephan-Boltzmann law https://doi.org/10.1016/j.jrmge.2016.10.004
+
+    emis = emissivity of atm [-]
+    LST = Land Surface Temprature [˚C]
+    """
+    LST = LST + 273.15
+    longIn = emisAtm * 5.6703 * 10.0 ** (-8.0) * LST ** 4
+    savetif(longIn, outputPath)
+    return longIn
+
+
+def shortout(albedo, shortin, outputPath):
+    """
+    # Outgoing Shortwave Radiation [W/m2]
+    # via https://www.posmet.ufv.br/wp-content/uploads/2016/09/MET-479-Waters-et-al-SEBAL.pdf
+
+    albedo = Albedo [-]
+    shortin = Shortwave Incoming Radiation [W/m2]
+    """
+    shortOut =  albedo * shortin
+    savetif(shortOut, outputPath)  
+    return shortOut
+
+def Rn(shortIn, shortOut, longIn, longOut, outputPath):
+    """
+    # Net Energy Bdget [W/m2]
+    # via https://www.redalyc.org/journal/2736/273652409002/html/#redalyc_273652409002_ref4
+
+    shortIn = Incoming Shortwave Radiation [W/m2]
+    shortOut = Outgoing Shortwave Radiation [W/m2]
+    longIn = Incoming Longwave Radiation [W/m2]
+    longOut = Outgoing Longwave Radiation [W/m2]
+    """
+    Rn = shortIn - shortOut + longIn - longOut
+    savetif(Rn, outputPath)
+    return Rn
+
+def ra(airDensity, LST, Ta, eo, es, psychro, Rn, OutputPath, cp = 0.001013):
+    """
+    # Aerodynamic Resistance
+    # via https://www.posmet.ufv.br/wp-content/uploads/2016/09/MET-479-Waters-et-al-SEBAL.pdf
+
+    airDensity = Density of Air [kg/m3]
+    LST = Land Surface Temperature [˚C]
+    Ta = Air Temperature [˚C]
+    eo = Partial Water Vapour Pressure [kPa]
+    es = Saturated vapour pressure [kPa]
+    psychro = Psychrometric constant [kPa/˚C]
+    Rn = Net Energy Budget [W/m2]
+    cp = Specific heat at constant pressure [MJ/kg/°C]
+
+    """
+    ra = (airDensity * cp * ((LST - Ta) + ((eo - es) / psychro))) / Rn
+    savetif(ra, OutputPath)
+    return ra
+
+def sensHFlux(airDens, LST, ra, Ta, outputPath, cp = 0.001013):
+    """
+    # Sensible Heat Flux
+    # via
+
+    LST = Land Surface Temperature [˚C]
+    ra = Air Resistence [s/m]
+    Ta = Air Temperature [˚C]
+    cp = Specific heat at constant pressure [MJ/kg/°C]
+    airDens = Density of Air [kg/m3]
+    LST_K = Land Surface Temperature [K]
+    Ta_K = Air Temperature [K]
+    """
+    
+    LST_K = LST + 273.15
+    Ta_K = Ta + 273.15
+
+    H = (airDens * cp * (LST_K - Ta_K)) / ra
+    savetif(H, outputPath)
+    return H
+
+def soilGFlux(LST, albedo, ndvi, Rn, outputPath):
+    """
+    # Soil/Ground Heat Flux [W/m2]
+    # via Baasriansen, 2000 (BASTIAANSSEN, W. G. M. SEBAL - based sensible and latent heat fluxes in the irrigated Gediz Basin, Turkey. Journal of Hydrology, v.229, p.87-100, 2000.)
+
+    LST = Land Surface Temperature [˚C]
+    albedo = Albedo [-]
+    ndvi = Normal Differential Vegetation Index [-]
+    Rn - Net ENergy Budget [W/m-2]
+    """
+    G = LST / albedo * (0.0038 * albedo + 0.0074 * albedo ** 2) * (1 - 0.98 * ndvi ** 4) * Rn
+    savetif(G, outputPath)
+    return G
+
+
+def evapoFraction(Ta_max, Ta, LST, outputPath):
+    """
+    # Fraction of Evapotranspiration
+    # via https://www.sciencedirect.com/science/article/pii/S0309170811000145?via%3Dihub
+
+    Ta_max = Maximum Air Temperature [˚C]
+    Ta = Air Temperature [˚C]
+    LST = Land Surface Temperature [˚C]
+    outputPath = path to output directory
+    """
+    
+    EF = (Ta_max/LST) / (Ta_max / Ta)
+    savetif(EF, outputPath)
+    return EF
+
+def le(EF, Rn, G, outputPath):
+    """
+    # Latent HEat Flux [W/m2]
+    # via Baasriansen, 2000 (BASTIAANSSEN, W. G. M. SEBAL - based sensible and latent heat fluxes in the irrigated Gediz Basin, Turkey. Journal of Hydrology, v.229, p.87-100, 2000.)
+
+    EF = Frantion of Evaporation [-]
+    Rn = Net Energy Budget [W/m2]
+    G = Soil/Ground Heat Flux [W/m2]
+    """
+    LE = EF * (Rn - G)
+    savetif(LE, outputPath)
+    return LE
+
+def bowenIndex(H, LE, outputPath):
+    """
+    # Bowen Index
+    # via https://daac.ornl.gov/FIFE/Datasets/Surface_Flux/Bowen_Ratio_USGS.html
+    H = Sensible Heat Flux [W/m2]
+    LE = Latent Heat Flux [W/m2]
+    """
+    BI = H / LE
+    BI[BI < 0] = 0.1
+    BI[BI > 5] = 4.9
+    savetif(BI, outputPath)
+    return BI

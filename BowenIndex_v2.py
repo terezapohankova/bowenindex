@@ -5,6 +5,7 @@ from socketserver import DatagramRequestHandler
 from sre_constants import IN
 from pprint import pprint
 import csv
+#from BowenIndex import RadAddBandB2, RadAddBandB4_L1TP, RadAddBandB6_L1TP
 import supportlib_v2
 import numpy as np
 import math
@@ -31,6 +32,7 @@ OUT_FLUX_FOLDER = os.path.join(OUTPUT_PATH,'flux')
 OUT_NET_FOLDER = os.path.join(OUTPUT_PATH,'netBudget')
 OUT_ALBEDO_FOLDER = os.path.join(OUTPUT_PATH,'albedo')
 OUT_LST_FOLDER = os.path.join(OUTPUT_PATH,'lst')
+OUT_BOWEN_FOLDER = os.path.join(OUTPUT_PATH,'bowenindex')
 
 os.makedirs(OUT_CLIP_FOLDER, exist_ok = True)
 os.makedirs(OUT_VEG_INDEX_FOLDER, exist_ok = True)
@@ -39,6 +41,7 @@ os.makedirs(OUT_FLUX_FOLDER, exist_ok = True)
 os.makedirs(OUT_NET_FOLDER, exist_ok = True)
 os.makedirs(OUT_ALBEDO_FOLDER, exist_ok = True)
 os.makedirs(OUT_LST_FOLDER, exist_ok = True)
+os.makedirs(OUT_BOWEN_FOLDER, exist_ok = True)
 
 meteorologyDict = supportlib_v2.createmeteodict(METEOROLOGY) #{{'20220518': {'avg_temp': '14.25','max_temp': '19.8','min_temp': '8.7','relHum': '65.52','wind_sp': '1.25'}},
 #pprint(meteorologyDict)
@@ -90,6 +93,7 @@ for jsonFile in JSON_MTL_PATH:
 
 imgDict = {} # {sensingdate : {path : path, radiance : int ...} }
 kbDict = {}
+kbList = []
 
 for inputBand in ORIGINAL_IMG:
     # if date on original input band equals date sensing date from json mtl, then append it to the list
@@ -177,7 +181,7 @@ for date in sensingDate:
             os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'lst' + '.TIF')))
     
     #calculate rb for each band from b2 to b7
-    for date, bandLevelDict in imgDict.items():
+    """for date, bandLevelDict in imgDict.items():
         for bandLevel, valuesDict in bandLevelDict.items():
             rb = supportlib_v2.rb_band(imgDict[date][bandLevel]['REFLECTANCE_ADD'], imgDict[date][bandLevel]['RADIANCE_MULT'], 
                     imgDict[date][bandLevel]['clipped_path'], imgDict[date][bandLevel]['sunElev'],
@@ -187,5 +191,112 @@ for date in sensingDate:
                     imgDict[date][bandLevel]['clipped_path'], imgDict[date]['B5_L2']['dES'],
                     os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + bandLevel + '.TIF')))
         
-            kbDict.setdefault(date, [])
-            pprint(kbDict[date].update('h'))
+            #kbDict.setdefault(date, [])
+            #pprint(kbDict[date].update('h'))
+
+            # append all kb paths to list, get unique values by set and convert back to list
+            kbList.append(os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + bandLevel + '.TIF')))
+            kbList = (list(set(kbList)))"""
+
+    rb2 = supportlib_v2.rb_band(imgDict[date]['B2_L2']['REFLECTANCE_ADD'], imgDict[date]['B2_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B2_L2']['clipped_path'], imgDict[date]['B2_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B2' + '.TIF')))
+    rb3 = supportlib_v2.rb_band(imgDict[date]['B3_L2']['REFLECTANCE_ADD'], imgDict[date]['B3_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B3_L2']['clipped_path'], imgDict[date]['B3_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B3' + '.TIF')))
+    rb4 = supportlib_v2.rb_band(imgDict[date]['B4_L2']['REFLECTANCE_ADD'], imgDict[date]['B4_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B4_L2']['clipped_path'], imgDict[date]['B4_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B4' + '.TIF')))
+    rb5 = supportlib_v2.rb_band(imgDict[date]['B5_L2']['REFLECTANCE_ADD'], imgDict[date]['B5_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B5_L2']['clipped_path'], imgDict[date]['B5_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B5' + '.TIF')))
+    rb6 = supportlib_v2.rb_band(imgDict[date]['B6_L2']['REFLECTANCE_ADD'], imgDict[date]['B6_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B6_L2']['clipped_path'], imgDict[date]['B6_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B6' + '.TIF')))
+    rb7 = supportlib_v2.rb_band(imgDict[date]['B7_L2']['REFLECTANCE_ADD'], imgDict[date]['B7_L2']['REFLECTANCE_MULT'], 
+                    imgDict[date]['B7_L2']['clipped_path'], imgDict[date]['B7_L2']['sunElev'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B7' + '.TIF')))
+    
+    
+    kb2 = supportlib_v2.kb(rb2, Z, imgDict[date]['B2_L2']['RADIANCE_ADD'], imgDict[date]['B2_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B2_L2']['clipped_path'], imgDict[date]['B2_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B2' + '.TIF')))
+
+    kb3 = supportlib_v2.kb(rb3, Z, imgDict[date]['B3_L2']['RADIANCE_ADD'], imgDict[date]['B3_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B3_L2']['clipped_path'], imgDict[date]['B3_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B3' + '.TIF')))
+
+    kb4 = supportlib_v2.kb(rb4, Z, imgDict[date]['B4_L2']['RADIANCE_ADD'], imgDict[date]['B4_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B4_L2']['clipped_path'], imgDict[date]['B4_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B4' + '.TIF')))
+
+    kb5 = supportlib_v2.kb(rb5, Z, imgDict[date]['B5_L2']['RADIANCE_ADD'], imgDict[date]['B5_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B5_L2']['clipped_path'], imgDict[date]['B5_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B5' + '.TIF')))
+
+    kb6 = supportlib_v2.kb(rb6, Z, imgDict[date]['B6_L2']['RADIANCE_ADD'], imgDict[date]['B6_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B6_L2']['clipped_path'], imgDict[date]['B6_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B6' + '.TIF')))
+
+    kb7 = supportlib_v2.kb(rb7, Z, imgDict[date]['B7_L2']['RADIANCE_ADD'], imgDict[date]['B7_L2']['RADIANCE_MULT'], 
+                    imgDict[date]['B7_L2']['clipped_path'], imgDict[date]['B7_L2']['dES'],
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B7' + '.TIF')))
+
+    
+    """pb2 = supportlib_v2.pb(kb2, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B2' + '.TIF')))
+    pb3 = supportlib_v2.pb(kb3, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B3' + '.TIF')))
+    pb4 = supportlib_v2.pb(kb4, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B4' + '.TIF')))
+    pb5 = supportlib_v2.pb(kb5, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B5' + '.TIF')))
+    pb6 = supportlib_v2.pb(kb6, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B6' + '.TIF')))
+    pb7 = supportlib_v2.pb(kb7, kb2, kb3, kb4, kb5, kb6, kb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B7' + '.TIF')))"""
+
+    kbDterminator = (kb2 + kb3 + kb4 + kb5 + kb6 + kb7)
+    pb2 = kb2 / kbDterminator   
+    pb3 = kb3 / kbDterminator
+    pb4 = kb4 / kbDterminator  
+    pb5 = kb5 / kbDterminator 
+    pb6 = kb6 / kbDterminator 
+    pb7 = kb7 / kbDterminator
+
+    toaPlanet = supportlib_v2.toaplanetary(pb2,rb2, pb3, rb3, pb4, rb4,  pb5, rb5, pb6,rb6, pb7, rb7, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'toaPlanet' + '.TIF')))
+
+    albedo = supportlib_v2.albedo(toaPlanet, toc, 
+                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'albedo' + '.TIF')))
+
+    longOut = supportlib_v2.longout(emisSurf, lst, os.path.join(OUTPUT_PATH, OUT_NET_FOLDER ,
+                    os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'longOut' + '.TIF')))
+    longIn = supportlib_v2.longin(atmEmis, lst, 
+                    os.path.join(OUTPUT_PATH, OUT_NET_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'longIn' + '.TIF')))
+    
+    #shortnIn = supportlib_v2.shortIn(imgDict[date]['B2_L2']['sunElev'], imgDict[date]['B2_L2']['dES'], Z)
+    shortIn = 650
+    shortOut = supportlib_v2.shortout(albedo, shortIn, 
+                    os.path.join(OUTPUT_PATH, OUT_NET_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'shortOut' + '.TIF')))
+
+    rn = supportlib_v2.Rn(shortIn, shortOut, longIn, longOut, 
+                    os.path.join(OUTPUT_PATH, OUT_NET_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rn' + '.TIF')))
+
+    ra = supportlib_v2.ra(airDensity, lst, meteorologyDict[date]['avg_temp'], e0, es, psychro, rn, 
+                    os.path.join(OUTPUT_PATH, OUT_NET_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'ra' + '.TIF')))
+    
+    h = supportlib_v2.sensHFlux(airDensity, lst, ra, meteorologyDict[date]['avg_temp'], 
+                    os.path.join(OUTPUT_PATH, OUT_FLUX_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'sensHeatFLux' + '.TIF')))
+    
+    g = supportlib_v2.soilGFlux(lst, albedo, ndvi, rn, 
+                    os.path.join(OUTPUT_PATH, OUT_FLUX_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'SoilHeatFLux' + '.TIF')))
+
+    ef = supportlib_v2.evapoFraction(meteorologyDict[date]['max_temp'], meteorologyDict[date]['avg_temp'], lst, 
+                    os.path.join(OUTPUT_PATH, OUT_FLUX_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'ef' + '.TIF')))
+
+    le = supportlib_v2.le(ef, rn, g, 
+                    os.path.join(OUTPUT_PATH, OUT_FLUX_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'le' + '.TIF')))
+    
+    bowenIndex = supportlib_v2.bowenIndex(h, le, 
+                    os.path.join(OUTPUT_PATH, OUT_BOWEN_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'bowen' + '.TIF')))

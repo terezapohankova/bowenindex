@@ -49,9 +49,6 @@ meteorologyDict = supportlib_v2.createmeteodict(METEOROLOGY) #{{'20220518': {'av
 #pprint(meteorologyDict)
 # e.g. meteorologyDict[date]['avg_temp']
 
-
-
-
 # get paths to images and jsons
 JSON_MTL_PATH = supportlib_v2.getfilepath(INPUT_FOLDER, 'MTL.json') #['root/snimky_L9_testovaci/LC09_L2SP_190025_20220518_20220520_02_T1/LC09_L2SP_190025_20220518_20220520_02_T1_MTL.json']
 ORIGINAL_IMG = supportlib_v2.getfilepath(INPUT_FOLDER, '.TIF') #['root/snimky_L9_testovaci/18052022/LC09_L2SP_190025_20220518_20220518_02_T1_SZA.TIF']
@@ -72,14 +69,7 @@ for jsonFile in JSON_MTL_PATH:
         if sensDate not in sensingDate:
             sensingDate.append(sensDate)
             if not os.path.exists(os.path.join(OUTPUT_PATH, OUT_CLIP_FOLDER, sensDate)): 
-                os.makedirs(os.path.join(OUTPUT_PATH, OUT_CLIP_FOLDER, sensDate))
-        
-        #for jsonFile in JSON_MTL_PATH:
-            #if 'L2SP' in jsonFile:
-                #loadJSON = supportlib_v2.load_json(jsonFile)
-                #sensDate = jsonFile.split('_')[5] # 20220518
-                #sensingDate.append(sensDate)
-            
+                os.makedirs(os.path.join(OUTPUT_PATH, OUT_CLIP_FOLDER, sensDate))           
             
         mtlJSONFile[sensDate] = loadJSON
         
@@ -183,23 +173,7 @@ for date in sensingDate:
             os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'lst' + '.TIF')))
     
     #calculate rb for each band from b2 to b7
-    """for date, bandLevelDict in imgDict.items():
-        for bandLevel, valuesDict in bandLevelDict.items():
-            rb = supportlib_v2.rb_band(imgDict[date][bandLevel]['REFLECTANCE_ADD'], imgDict[date][bandLevel]['RADIANCE_MULT'], 
-                    imgDict[date][bandLevel]['clipped_path'], imgDict[date][bandLevel]['sunElev'],
-                    os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + bandLevel + '.TIF')))
-            
-            kb = supportlib_v2.kb(rb, Z, imgDict[date][bandLevel]['RADIANCE_ADD'], imgDict[date][bandLevel]['RADIANCE_MULT'], 
-                    imgDict[date][bandLevel]['clipped_path'], imgDict[date]['B5_L2']['dES'],
-                    os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + bandLevel + '.TIF')))
-        
-            #kbDict.setdefault(date, [])
-            #pprint(kbDict[date].update('h'))
-
-            # append all kb paths to list, get unique values by set and convert back to list
-            kbList.append(os.path.join(OUTPUT_PATH, OUT_LST_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + bandLevel + '.TIF')))
-            kbList = (list(set(kbList)))"""
-
+   
     rb2 = supportlib_v2.rb_band(imgDict[date]['B2_L2']['REFLECTANCE_ADD'], imgDict[date]['B2_L2']['REFLECTANCE_MULT'], 
                     imgDict[date]['B2_L2']['clipped_path'], imgDict[date]['B2_L2']['sunElev'],
                     os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'rb_' + 'B2' + '.TIF')))
@@ -244,19 +218,7 @@ for date in sensingDate:
                     imgDict[date]['B7_L2']['clipped_path'], imgDict[date]['B7_L2']['dES'],
                     os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'kb_' + 'B7' + '.TIF')))
 
-    
-    """pb2 = supportlib_v2.pb(kb2, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B2' + '.TIF')))
-    pb3 = supportlib_v2.pb(kb3, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B3' + '.TIF')))
-    pb4 = supportlib_v2.pb(kb4, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B4' + '.TIF')))
-    pb5 = supportlib_v2.pb(kb5, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B5' + '.TIF')))
-    pb6 = supportlib_v2.pb(kb6, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B6' + '.TIF')))
-    pb7 = supportlib_v2.pb(kb7, kb2, kb3, kb4, kb5, kb6, kb7, 
-                    os.path.join(OUTPUT_PATH, OUT_ALBEDO_FOLDER, os.path.basename(imgDict[date]['B5_L2']['clipped_path']).replace('B5.TIF', 'pb_' + 'B7' + '.TIF')))"""
+
 
     kbDterminator = (kb2 + kb3 + kb4 + kb5 + kb6 + kb7)
     pb2 = kb2 / kbDterminator   

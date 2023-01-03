@@ -1,23 +1,25 @@
 
+import csv
+import json
+import math
+import os
+import sys
 from codecs import readbuffer_encode
-import os, sys
+from collections import defaultdict
+from pprint import pprint
 from socketserver import DatagramRequestHandler
 from sre_constants import IN
-from pprint import pprint
-import csv
+
+import numpy as np
+
 #from BowenIndex import RadAddBandB2, RadAddBandB4_L1TP, RadAddBandB6_L1TP
 import supportlib_v2
-import numpy as np
-import math
-import json
-from collections import defaultdict
-
 
 # get data
-INPUT_FOLDER = r'/home/tereza/ownCloud/skripty/BowenIndex/snimky_L9_testovaci'
-OUTPUT_PATH = r'/home/tereza/Documents/testy_VSC'
-MASK = r'/home/tereza/Documents/boundary/olomouc_32633.gpkg'
-METEOROLOGY = r'/home/tereza/ownCloud/skripty/BowenIndex/snimky_L9_testovaci/weather.csv'
+INPUT_FOLDER = r'InputFolderPath'
+OUTPUT_PATH = r'OutpuFolderPath'
+MASK = r'GPKGPolygonMaskPath'
+METEOROLOGY = r'CSVMeteorologyPath'
 
 
 # constants

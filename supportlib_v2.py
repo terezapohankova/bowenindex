@@ -369,3 +369,54 @@ def z0m(vegHeigth):
     """
     z0m = 0.123 * vegHeigth
     return z0m
+
+############################################################################################################################################
+#   FLUXES
+############################################################################################################################################
+
+def soilGFlux(LST, albedo, ndvi, Rn, outputPath):
+    """
+    # Soil/Ground Heat Flux [W/m2]
+    # via BASTIAANSSEN, 2000 (BASTIAANSSEN, W. G. M. SEBAL - based sensible and latent heat fluxes in the irrigated Gediz Basin, Turkey. Journal of Hydrology, v.229, p.87-100, 2000.)
+
+    LST = Land Surface Temperature [˚C]
+    albedo = Albedo [-]
+    ndvi = Normal Differential Vegetation Index [-]
+    Rn - Net ENergy Budget [W/m-2]
+    """
+    G = LST / albedo * (0.0038 * albedo + 0.0074 * albedo ** 2) * (1 - 0.98 * ndvi ** 4) * Rn
+    
+    #LST_K = LST - 273.15
+    #G = (Rn * (-13.46 + 0.507 * (4 * np.exp(0.123*LST_K)))) + 0.0086
+
+    savetif(G, outputPath)
+    return G
+
+######################################################################
+
+def H(LE, Rn, G, outputPath):
+    # gradient method
+
+    #LE = np.array(tf.imread(LE))
+    #Rn = np.array(tf.imread(Rn))
+    #G = np.array(tf.imread(G))
+
+    h = (Rn - G) - LE
+    savetif(h, outputPath)
+
+    return h
+
+######################################################################
+
+def le(EF, Rn, G, outputPath):
+    """
+    # Latent HEat Flux [W/m2]
+    # via Baasriansen, 2000 (BASTIAANSSEN, W. G. M. SEBAL - based sensible and latent heat fluxes in the irrigated Gediz Basin, Turkey. Journal of Hydrology, v.229, p.87-100, 2000.)
+
+    EF = Frantion of Evaporation [-]
+    Rn = Net Energy Budget [W/m2]
+    G = Soil/Ground Heat Flux [W/m2]
+    """
+    LE = EF * (Rn - G)
+    savetif(LE, outputPath)
+    return LE

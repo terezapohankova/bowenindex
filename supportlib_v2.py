@@ -267,3 +267,105 @@ def albedo(toaplanet, Toc, outputPath):
     savetif(albedo, outputPath)
     return albedo
 
+############################################################################################################################################
+#   ATMOSHEPRIC FUNCTIONS
+############################################################################################################################################
+def e0(T):
+    """
+    # Partial Water Vapour Pressure [kPa]
+    # Tetens Formula via https://www.omnicalculator.com/chemistry/vapour-pressure-of-water
+
+    T = Air Temperature [˚C]
+    """
+    e0 = 0.6108 * math.exp(((17.27 * T) / (T + 237.3)))
+    return e0
+
+######################################################################
+
+def es(Tamax, Tamin, Ta):
+    """
+    # Saturated Vapour Pressure [kPa]
+    # via https://www.fao.org/3/x0490e/x0490e07.htm#atmospheric%20pressure%20(p)
+    
+    Ta = Average Air Temperature (˚C)
+    """
+    
+    es = (6.1078 * 10**(7.5 * Ta /(Ta + 237.3))) / 10
+    return es
+
+######################################################################
+
+def atmPress(Z):
+    """
+    # Atmospheric Pressure [kPa]
+    # via https://designbuilder.co.uk/helpv3.4/Content/Calculation_of_Air_Density.htm
+
+    Z = Elevation above sea level [m]
+    """
+    
+    P = (101325 * ((1.0 - (Z * 0.0000225577)) ** 5.2559)) / 1000
+    return P
+
+######################################################################
+
+def psychroCons(P):
+    """
+    # Psychrometric constant [kPa/˚C]
+    # via https://www.fao.org/3/x0490e/x0490e07.htm#psychrometric%20constant%20(g)
+
+    P = Atmospheric Pressure [kPa]
+    """
+    y =  0.00065 * P
+    return y
+
+######################################################################
+
+def densityair(P, Ta, RH, R = 278.05):
+    """
+    Density of Air [kg/m3]
+    # via https://designbuilder.co.uk/helpv3.4/Content/Calculation_of_Air_Density.htm
+    
+    R  = Gas Constant (287.05 J/kg-K)
+    Ta = Air Temperature in K (T [˚C] + 273.15)
+    P = Standard Pressure [kPa]
+    """
+    P = P * 1000
+
+    #saturated vapour pressure in Pa
+    p1 = 6.1078 * (10**(7.5 * Ta /(Ta + 237.3)))
+    
+    # the water vapor pressure in Pa
+    pv = p1 * RH
+
+    #pressure of dry air
+    pd = P - pv
+    air_density = (pd / (R * (Ta + 273.15))) + (pv / (461.495  * (Ta + 273.15)))
+  
+    return air_density
+
+######################################################################
+
+def	atmemis(es, Ta):
+	#(Brutsaert 1982).
+    """
+    # Emmisivity of the Atmosphere
+    # via Brutsart, 1982 (https://link.springer.com/book/10.1007/978-94-017-1497-6)
+
+    Ta = Air Temperature [˚C]
+    es = Saturated vapour pressure [kPa]
+    """
+    
+    atmEmis = 1.24 * (es * 10.0/(Ta + 273.15)) ** (1.0/7.0)
+    return atmEmis
+
+######################################################################
+
+def z0m(vegHeigth):
+
+    """
+    # Roughness length governing momentum transfer [m]
+
+    vegHeigth = height of vegetation
+    """
+    z0m = 0.123 * vegHeigth
+    return z0m

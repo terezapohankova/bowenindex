@@ -563,3 +563,117 @@ def bowenIndex(H, LE, outputPath):
     BI[BI > 5] = 4.9
     savetif(BI, outputPath)
     return BI
+
+############################################################################################################################################
+#   VEGETATION
+############################################################################################################################################
+def msavi(green, red, outputPath):
+    """
+    # Modified Soil Adjusted Vegetation Index
+    # via http://www.jbrom.smoothcollie.eu/?page_id=147
+    
+    green = green landsat band
+    red = red landsat band
+
+    """
+    green = np.array(tf.imread(green))
+    red = np.array(tf.imread(red))
+
+    msavi = 0.5 * ((2 * red + 1) - ((2 * red + 1) ** 2.0 - 8*(red - green)) ** 0.5)
+    msavi[msavi == np.inf] = 0               	
+    msavi[msavi == -np.inf] = 0
+
+    savetif(msavi, outputPath)
+    
+    return msavi
+
+############################################################################################################################################
+
+def ndvi(nir, red, outputPath):
+    """
+    # Normalized Differential Vegetation Index
+    # NDVI = (NIR - RED) / (NIR + RED)
+    # Unitless
+    # Range from -1 to +1
+    """
+    nir = np.array(tf.imread(nir))
+    red = np.array(tf.imread(red))
+    zero_except = np.seterr(all = "ignore")
+    NDVI = (nir - red) / (nir + red)
+    NDVI[NDVI > 1] = np.mean(NDVI)
+    NDVI[NDVI < -1] = np.mean(NDVI)
+
+
+    savetif(NDVI, outputPath)
+
+    return NDVI
+
+######################################################################
+
+# BROM sebcs
+def	vegHeight(h_min, h_max, msavi, outputPath):
+    """
+    Heigth of vegetation cover (m) derived from MSAVI index according to Gao et al. (2011).
+
+    # via http://www.jbrom.smoothcollie.eu/?page_id=147
+    """
+    #msavi = np.array(tf.imread(msavi))
+    minmsavi = np.min(msavi)
+    maxmsavi = np.max(msavi)
+
+    h_eff = h_min + (msavi - minmsavi) / (minmsavi - maxmsavi) * (h_min - h_max)
+    
+    h_eff[h_eff < h_min] = h_min
+    h_eff[h_eff > h_max] = h_max
+    
+    savetif(h_eff, outputPath)
+    return h_eff
+
+######################################################################
+#vegetation fraction (proportion of vegetation)
+def pv(NDVI):
+    """
+    # Fraction of Vegetation
+    # via https://giscrack.com/how-to-calculate-land-surface-temperature-with-landsat-8-images/
+
+    NDVI = Normal Differential Vegetation Index
+    """
+    zero_except = np.seterr(all = "ignore")
+    #PV = np.sqrt((NDVI - np.min(NDVI))/ (np.max(NDVI) - np.min(NDVI)))
+    PV = np.divide(np.power(NDVI, 2), 0.3) 
+    
+    PV[PV > 1] = 0.99
+    PV[PV < 0] = 0.1
+
+    return PV
+
+######################################################################
+
+def evapoFraction(Ta_max, Ta, LST, outputPath):
+    """
+    # Fraction of Evapotranspiration
+    # via https://www.sciencedirect.com/science/article/pii/S0309170811000145?via%3Dihub
+
+    Ta_max = Maximum Air Temperature [˚C]
+    Ta = Air Temperature [˚C]
+    LST = Land Surface Temperature [˚C]
+    outputPath = path to output directory
+    """
+    
+    EF = (Ta_max/LST) / (Ta_max / Ta)
+    savetif(EF, outputPath)
+    return EF
+
+######################################################################
+
+def tpw(Z):
+    """
+    # Total Precipitable Water [kg/m2]
+    # via https://www.scielo.br/j/rbeaa/a/sX6cJjNXWMfHQ5p4h33B8Zz/?lang=en&format=pdf
+
+    RU = Relative Humidity [%]
+    P = Atmospheric Pressure [kPa]  
+    """
+
+    tpw = 0.75 +(0.00002 * Z)
+    return tpw

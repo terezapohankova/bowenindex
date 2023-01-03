@@ -1,17 +1,16 @@
+import csv
+import json
+import math
 import os
+from pprint import pprint
+
 import fiona
+import numpy as np
 import rasterio
 import rasterio.mask
-from pprint import pprint
-import numpy as np
-from sympy import Le
 import tifffile as tf
-import csv
 from osgeo import gdal, osr
-import math
-import json
-
-
+from sympy import Le, ln
 
 ######################################################################
 #   GENERAL FUNCTIONS

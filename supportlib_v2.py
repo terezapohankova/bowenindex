@@ -12,23 +12,37 @@ import tifffile as tf
 from osgeo import gdal, osr
 from sympy import Le, ln
 
-######################################################################
+############################################################################################################################################
 #   GENERAL FUNCTIONS
-######################################################################
+############################################################################################################################################
 
 def getfilepath(input_folder, suffix):
+    
+    """
+    # Get a filtered list of paths to files containing a certain suffix 
+
+    input_folder = folder contaning the input files
+    suffix = file suffix to be filtered (eg. .TIF, .JSON)
+    """
+
     pathListFolder = []
     for root, dirs, files in os.walk(input_folder, topdown=False):
         for name in files:
             if name.endswith(suffix):
                 if name not in pathListFolder:
                     pathListFolder.append(os.path.join(root, name))
-                #'C:\\Users\\Tereza\\Documents\\PhD\\zkousky\\2_vyvoj_pro_FOSS\\snimky\\LC08_L1TP_190025_20170528_20200903_02_T1\\LC08_L1TP_190025_20170528_20200903_02_T1_B5.TIF'
     return pathListFolder
 
 ######################################################################
 
 def createmeteodict(csv_file):
+
+    """
+    # Create a dictionary of meteorology data
+    # eg. {'date': [avg_temp': '22.60','max_temp': '28.4','min_temp': '13.3','relHum': '70.21','wind_sp': '0.83']}
+
+    csv_file = file in CSV format containing meterological data with date in original format (YYYYMMDD)
+    """
     with open(csv_file, mode = 'r') as infile:
         csv_list = [[val.strip() for val in r.split(",")] for r in infile.readlines()] #[['date', 'avg_temp', 'wind_sp', 'relHum', 'max_temp', 'min_temp'],
                                                                                        #['20220518', '14.25', '1.25', '65.52', '19.8', '8.7'],
@@ -53,6 +67,16 @@ def load_json(jsonFile):
 ######################################################################
 
 def clipimage(maskPath, inputBand, outImgPath):
+
+    """
+    # Image clipping using a pre-prepared GeoPackage mask in the same coordinate system as the images
+
+    maskPath = path to polygon mask
+    inputBand = image to be clipped
+    outImgPath = path to new cropped image
+
+    """
+
     with fiona.open(maskPath, "r") as gpkg:
         shapes = [feature["geometry"] for feature in gpkg]
 
@@ -60,7 +84,7 @@ def clipimage(maskPath, inputBand, outImgPath):
         out_image, out_transform = rasterio.mask.mask(src, shapes, crop=True)
         out_meta = src.meta
     
-    out_meta.update({"driver": "GTiff",
+    out_meta.update({"driver": "GTiff", # output format GeoTiff
                     "height": out_image.shape[1],
                     "width": out_image.shape[2],
                     "transform": out_transform})
@@ -72,20 +96,33 @@ def clipimage(maskPath, inputBand, outImgPath):
 ######################################################################
 
 def savetif(img, outputPath, epsg = 32633):
+
+    """
+    # Save and trasnform cropped image
+
+    img = input cropped image to be saved
+    outputPath = place to save the image
+    epsg = a code for coordinate system by https://epsg.io/ standard
+    """
+
     new_dataset = rasterio.open(outputPath, "w", 
         driver = "GTiff",
         height = img.shape[0],
         width = img.shape[1],
         count = 1,
-        nodata = -9999,
+        nodata = -9999, # optinal value for nodata
         dtype = img.dtype,
-        crs = epsg,
+        crs = epsg, # driver for coordinate system code
+        
         # upper left, pixel size
-        transform = rasterio.transform.from_origin(656265, 5503485, 30, 30))
+        # rasterio.transform.from_origin(west, north, xsize, ysize) -> affine transformation 
+        transform = rasterio.transform.from_origin(656268, 5503485, 30, 30))
+        #transform = rasterio.transform.from_origin(606952.1, 5485756.2, 30, 30))
     new_dataset.write(img, 1)
     new_dataset.close()
     
     return
+
 
 ######################################################################
 #   ATMOSHEPRIC FUNCTIONS

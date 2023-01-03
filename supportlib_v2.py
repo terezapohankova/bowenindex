@@ -420,3 +420,146 @@ def le(EF, Rn, G, outputPath):
     LE = EF * (Rn - G)
     savetif(LE, outputPath)
     return LE
+
+############################################################################################################################################
+#   RADIATION
+############################################################################################################################################
+
+def bt(K1, K2, RadAddBand, RadMultBand, band):
+    """
+    # Top of Atmosphere Brightness Temperature [K]
+    # via Landsat 8 Data Users Handbook (https://www.usgs.gov/media/files/landsat-8-data-users-handbook)
+
+    K1 = Band-specific thermal conversion constant from the metadata (K1_CONSTANT_BAND_x, where x is the thermal band number)
+    K2 = Band-specific thermal conversion constant from the metadata (K2_CONSTANT_BAND_x, where x is the thermal band number)
+    RadAddBand = Radiation Additive Term from the Metadata (RADIANCE_ADD_BAND_X)
+    RadMultBand =  Radiation Multiplicative Term from the Metadata (RADIANCE_MULT_BAND_X)
+    band = Landsat Thermal Band
+    TOARad = Top of Atmosphere Radiation
+    """
+    
+    band = np.array(tf.imread(band))
+    TOARad = RadMultBand * band + RadAddBand
+
+    BT = (K2 / np.log(K1/TOARad + 1)) - 273.15
+    BT[BT == -273.15] = 0
+    return BT
+
+######################################################################
+
+def longout(emisSurf, LST, outputPath):
+    """
+    # Outgoing Longwave Radiation [W/m2]
+    # via Stephan-Boltzmann law https://doi.org/10.1016/j.jrmge.2016.10.004
+
+    emisSurf = emissivity of surface [-]
+    LST = Land Surface Temprature [˚C]
+    """
+    LST = LST + 273.15
+    longOut = emisSurf * 5.6703 * 10.0 ** (-8.0) * LST ** 4
+    savetif(longOut, outputPath)
+    return longOut
+
+######################################################################
+
+def longin(emisAtm, LST, outputPath):
+    """
+    # Incoming Longwave Radiation [W/m2]
+    # via Stephan-Boltzmann law https://doi.org/10.1016/j.jrmge.2016.10.004
+
+    emis = emissivity of atm [-]
+    LST = Land Surface Temprature [˚C]
+    """
+    LST = LST + 273.15
+    longIn = emisAtm * 5.6703 * 10.0 ** (-8.0) * LST ** 4
+    savetif(longIn, outputPath)
+    return longIn
+
+######################################################################
+
+def shortout(albedo, shortin, outputPath):
+    """
+    # Outgoing Shortwave Radiation [W/m2]
+    # via https://www.posmet.ufv.br/wp-content/uploads/2016/09/MET-479-Waters-et-al-SEBAL.pdf
+
+    albedo = Albedo [-]
+    shortin = Shortwave Incoming Radiation [W/m2]
+    """
+    shortOut =  albedo * shortin
+    savetif(shortOut, outputPath)  
+    return shortOut
+
+######################################################################
+
+def Rn(shortIn, shortOut, longIn, longOut, outputPath):
+    """
+    # Net Energy Bdget [W/m2]
+    # via https://www.redalyc.org/journal/2736/273652409002/html/#redalyc_273652409002_ref4
+
+    shortIn = Incoming Shortwave Radiation [W/m2]
+    shortOut = Outgoing Shortwave Radiation [W/m2]
+    longIn = Incoming Longwave Radiation [W/m2]
+    longOut = Outgoing Longwave Radiation [W/m2]
+    """
+    Rn = shortIn - shortOut + longIn - longOut
+    savetif(Rn, outputPath)
+    return Rn
+
+############################################################################################################################################
+#   SURFACE
+############################################################################################################################################
+
+def emis(red, ndvi, Pv): #surface emis
+    """
+    # Surface Emmisivity
+    # via https://giscrack.com/how-to-calculate-land-surface-temperature-with-landsat-8-images/
+
+    red = Landsat Red Band
+    ndvi = Normal Differential Vegetation Index
+    Pv = Fraction of Vegetation
+    """
+    red = np.array(tf.imread(red))
+    
+    E = (0.004 * Pv) + 0.986
+    E = np.where(ndvi < 0.2, 1 - red, E) 
+    E = np.where(ndvi > 0.5, 0.99, E)
+    E[E > 1] = 0.99
+    E[E < 0.8] = 0.8
+    return E
+
+######################################################################
+
+def LST(BT, emis, band, outputPath):
+    """
+    # Land Surface Temperature [˚C]
+    # via Ugur Avdan and Gordana Jovanovska. “Automated
+            Mapping of Land Surface Temperature Using
+            LANDSAT 8 Satellite Data”, Journal of Sensors,
+            Vol. 2016, Article ID 1480307, 2016.
+
+    BT - Brightness temperature [K]
+    emis - emissivity [-]
+    band - Landsat band [-]
+    """
+    band = np.array(tf.imread(band))
+    
+    
+    LST = (BT / (1 + ((0.0015 * BT)/1.4488) * np.log(emis)))
+    
+    savetif(LST, outputPath)
+    return LST
+
+######################################################################
+
+def bowenIndex(H, LE, outputPath):
+    """
+    # Bowen Index
+    # via https://daac.ornl.gov/FIFE/Datasets/Surface_Flux/Bowen_Ratio_USGS.html
+    H = Sensible Heat Flux [W/m2]
+    LE = Latent Heat Flux [W/m2]
+    """
+    BI = H / LE
+    BI[BI < 0] = 0.1
+    BI[BI > 5] = 4.9
+    savetif(BI, outputPath)
+    return BI
